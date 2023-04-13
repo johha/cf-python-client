@@ -166,6 +166,18 @@ class TestCloudfoundryClient(
             self.assertEqual(info.doppler_endpoint, self.DOPPLER_ENDPOINT)
             self.assertEqual(info.log_stream_endpoint, self.LOG_STREAM_ENDPOINT)
 
+
+    def test_user_agent_header(self):
+        requests = FakeRequests()
+        session = MockSession()
+        # How to mock this?
+        with patch("oauth2_client.credentials_manager.requests", new=requests), patch("cloudfoundry_client.client.requests", new=requests):
+            requests.Session.return_value = session
+            client = CloudFoundryClient(self.TARGET_ENDPOINT, user_agent="custom-user-agent")
+            self._mock_info_calls(requests)
+            response = client.get("http://some-url")
+            self.assertTrue(True)
+
     def test_invalid_token_v3(self):
         response = MockResponse(
             "http://some-cf-url",

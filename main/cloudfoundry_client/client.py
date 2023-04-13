@@ -138,11 +138,13 @@ class CloudFoundryClient(CredentialManager):
             The passed string has to be a URL-Encoded JSON Object, containing the field origin with value as origin_key
             of an identity provider. Note that this identity provider must support the grant type password.
             See UAA API specifications
+        :param user_agent: string Can be set to override the user agent header.
         """
         proxy = kwargs.get("proxy", dict(http="", https=""))
         verify = kwargs.get("verify", True)
         self.token_format = kwargs.get("token_format")
         self.login_hint = kwargs.get("login_hint")
+        self.user_agent = kwargs.get("user_agent")
         target_endpoint_trimmed = target_endpoint.rstrip("/")
         info = self._get_info(target_endpoint_trimmed, proxy, verify=verify)
         if not info.api_v2_version.startswith("2."):
@@ -282,29 +284,41 @@ class CloudFoundryClient(CredentialManager):
         )
 
     def get(self, url: str, params: Optional[dict] = None, **kwargs) -> Response:
+        print("get")
+        kwargs["headers"] = self._get_headers_with_user_agent(kwargs.get('headers', dict()))
         response = super(CloudFoundryClient, self).get(url, params, **kwargs)
         CloudFoundryClient._log_request("GET", url, response)
         return CloudFoundryClient._check_response(response)
 
     def post(self, url: str, data=None, json=None, **kwargs) -> Response:
+        kwargs["headers"] = self._get_headers_with_user_agent(kwargs.get('headers', dict()))
         response = super(CloudFoundryClient, self).post(url, data, json, **kwargs)
         CloudFoundryClient._log_request("POST", url, response)
         return CloudFoundryClient._check_response(response)
 
     def put(self, url: str, data=None, json=None, **kwargs) -> Response:
+        kwargs["headers"] = self._get_headers_with_user_agent(kwargs.get('headers', dict()))
         response = super(CloudFoundryClient, self).put(url, data, json, **kwargs)
         CloudFoundryClient._log_request("PUT", url, response)
         return CloudFoundryClient._check_response(response)
 
     def patch(self, url: str, data=None, json=None, **kwargs) -> Response:
+        kwargs["headers"] = self._get_headers_with_user_agent(kwargs.get('headers', dict()))
         response = super(CloudFoundryClient, self).patch(url, data, json, **kwargs)
         CloudFoundryClient._log_request("PATCH", url, response)
         return CloudFoundryClient._check_response(response)
 
     def delete(self, url: str, **kwargs) -> Response:
+        kwargs["headers"] = self._get_headers_with_user_agent(kwargs.get('headers', dict()))
         response = super(CloudFoundryClient, self).delete(url, **kwargs)
         CloudFoundryClient._log_request("DELETE", url, response)
         return CloudFoundryClient._check_response(response)
+
+    def _get_headers_with_user_agent(self, headers: dict) -> dict:
+        if self.user_agent is not None:
+            headers['User-Agent'] = self.user_agent
+        print("headers")
+        return headers
 
     @staticmethod
     def _log_request(method: str, url: str, response: Response):
